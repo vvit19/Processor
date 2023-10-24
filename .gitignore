@@ -1,0 +1,8 @@
+.vscode
+asm/obj
+disasm/obj
+cpu/obj
+utils/obj
+run
+*.out
+*.exe
