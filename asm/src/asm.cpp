@@ -45,7 +45,7 @@ void run_asm(asm_config* asm_parameters, const char* asm_file, const char* byte_
     asm_parameters->code = (char*) calloc(ncommands * (2 * sizeof(char) + sizeof(double)) * 2, sizeof(char));
     char* code_ptr = asm_parameters->code;
 
-    asm_parameters->labels             = (char**)       calloc(ncommands,     sizeof(char*));
+    asm_parameters->labels             = (char**)       calloc(ncommands,       sizeof(char*));
     asm_parameters->named_labels_array = (named_label*) calloc(ncommands, sizeof(named_label));
 
     asm_functions_call(asm_parameters, ncommands);

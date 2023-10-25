@@ -42,7 +42,7 @@ return_code spu_start(spu* proc, const char* byte_file)
         proc->command = *proc->code++;
         exit_code     = do_command(proc);
 
-        // stack_dump(proc->stk);
+        stack_dump(proc->stk);
         RETURN(exit_code);
     }
 

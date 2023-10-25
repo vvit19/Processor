@@ -56,7 +56,7 @@ stack_errors stack_push(stack* stk, elem_t value)
         stack_recalloc_up(stk);
     }
 
-    if (stk->size < -1) stk->size = 0;
+    if (stk->size < 0) stk->size = 0;
 
     stk->data[stk->size++] = value;
 
@@ -78,6 +78,7 @@ stack_errors stack_pop(stack* stk, elem_t* popped_value)
     }
 
     stk->size--;
+    if (stk->size < 0) stk->size = 0;
     *popped_value = stk->data[stk->size];
     stk->data[stk->size] = GARBAGE;
 
