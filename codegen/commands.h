@@ -19,6 +19,12 @@ DEF_CMD("out", OUT,
     printf("RESULT = %lf\n", proc->value);
 })
 
+DEF_CMD("outc", OUTC,
+{
+    stack_pop(proc->stk, &proc->value);
+    printf("%c", (int) proc->value);
+})
+
 DEF_CMD("in", IN,
 {
     printf("Push: ");
@@ -28,12 +34,26 @@ DEF_CMD("in", IN,
 
 DEF_CMD("push", PUSH,
 {
-    stack_push(proc->stk, *get_argument(proc));
+    if (proc->command & ARG_MEM)
+    {
+        char* popped_value = (char*) get_argument(proc);
+        stack_push(proc->stk, (double) *popped_value);
+    }
+    else {stack_push(proc->stk, *get_argument(proc));}
 })
 
 DEF_CMD("pop", POP,
 {
-    stack_pop(proc->stk, get_argument(proc));
+    if (proc->command & ARG_MEM)
+    {
+        char* ram_ptr = (char*) get_argument(proc);
+        stack_pop(proc->stk, &proc->value);
+        *ram_ptr = (char) proc->value;
+    }
+    else
+    {
+        stack_pop(proc->stk, get_argument(proc));
+    }
 })
 
 DEF_CMD("add", ADD,
@@ -101,7 +121,7 @@ DEF_CMD("jae", JAE,
 {
     POP_VALUES
 
-    if (temp_1 >= temp_2)
+    if ((temp_1 > temp_2) || is_equal(temp_1, temp_2))
     {
         proc->code -= ( ( (int) *get_argument(proc) ) + sizeof(elem_t) );
     }
@@ -129,7 +149,7 @@ DEF_CMD("jbe", JBE,
 {
     POP_VALUES
 
-    if (temp_1 <= temp_2)
+    if ((temp_1 < temp_2) || is_equal(temp_1, temp_2))
     {
         proc->code -= ( ( (int) *get_argument(proc) ) + sizeof(elem_t) );
     }

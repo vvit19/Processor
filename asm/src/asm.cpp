@@ -176,16 +176,28 @@ static void check_memory_args(asm_config* asm_parameters)
 
     for (int i = 0; (asm_parameters->buffer[i] != '\n') && (asm_parameters->buffer[i] != '\0'); i++)
     {
-        if ((asm_parameters->buffer[i] == ']') && (opened_bracket == true))
+        if ((asm_parameters->buffer[i] == '\\') && (opened_bracket == true))
         {
             asm_parameters->buffer[i] = ' ';
             asm_parameters->masked_byte |= ARG_MEM;
             return;
         }
 
-        if (asm_parameters->buffer[i] == '[')
+        if (asm_parameters->buffer[i] == '/')
         {
             asm_parameters->buffer[i] = ' ';
+            opened_bracket = true;
+        }
+
+        if ((asm_parameters->buffer[i] == ']') && (opened_bracket == true))
+        {
+            asm_parameters->buffer[i] = '\\';
+            return;
+        }
+
+        if (asm_parameters->buffer[i] == '[')
+        {
+            asm_parameters->buffer[i] = '/';
             opened_bracket = true;
         }
     }
@@ -199,7 +211,7 @@ static void check_command(asm_config* asm_parameters)
     {
         if (strcmp(asm_parameters->command, commands_to_string[i]) == 0)
         {
-            asm_parameters->masked_byte = i;
+            asm_parameters->masked_byte += i;
             break;
         }
     }
@@ -323,4 +335,5 @@ static void roll_parameters_back(asm_config* asm_parameters)
     asm_parameters->reg[0]   = '\0';
     asm_parameters->value    = VALUE_GARBAGE;
     asm_parameters->position = nullptr;
+    asm_parameters->masked_byte = 0;
 }

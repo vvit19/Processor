@@ -3,7 +3,7 @@
 
 #include "stack.h"
 
-const int RAM_SIZE = 100;
+const int RAM_SIZE = 121;
 
 enum byte_masks
 {
@@ -17,6 +17,7 @@ enum commands
 {
     HLT ,
     OUT ,
+    OUTC,
     IN  ,
     PUSH,
     POP ,
@@ -35,7 +36,7 @@ enum commands
     JE  ,
     JNE ,
     CALL,
-    RET,
+    RET ,
 };
 
 struct regs
@@ -48,7 +49,7 @@ struct regs
 
 struct spu
 {
-    char    ram[RAM_SIZE];
+    char ram[RAM_SIZE];
     char*   code;
     char    command;
     elem_t  value;

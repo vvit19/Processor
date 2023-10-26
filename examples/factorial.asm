@@ -11,6 +11,7 @@ call fact
 
 push rcx
 out
+
 hlt
 
 fact:

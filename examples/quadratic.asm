@@ -32,6 +32,10 @@ count_discr:
 solve_equation:
 
     push 0
+    push rax
+    je solve_linear
+
+    push 0
     push rdx
     jb output_no_sols ; if (d < 0) no solutions
 
@@ -66,11 +70,64 @@ solve_equation:
     out
     ret
 
+solve_linear:
+
+    push rbx
+    push 0
+    je const_eq_zero
+
+    push rcx
+    push -1
+    mult
+    push rbx
+    div
+
+    out
+
+    hlt
+
+const_eq_zero:
+
+    push rcx
+    push 0
+    je output_inf
+    jump output_no_sols
+
+output_inf:
+
+    push 105 ; 'i'
+    outc
+    push 110 ; 'n'
+    outc
+    push 102 ; 'f'
+    outc
+    push 10 ; '\n'
+    outc
+
+    hlt
+
+
 output_no_sols:
 
-    push -69666
-    out
+    push 110 ; 'n'
+    outc
+    push 111 ; 'o'
+    outc
+    push 32 ; ' '
+    outc
+    push 115 ; 's'
+    outc
+    push 111 ; 'o'
+    outc
+    push 108 ; 'l'
+    outc
+    push 115 ; 's'
+    outc
+    push 10 ; '\n'
+    outc
+
     hlt
+
 
 exit:
 
