@@ -6,95 +6,169 @@
 #include "utils.h"
 #include "disasm.h"
 
-static void  turn_into_asm(disasm_config* disasm, FILE* file);
-static char* scan_buffer(char* buffer, disasm_config* disasm);
-static void  check_command(disasm_config* disasm);
+#define RETURN(exit_code)     \
+    if (exit_code == EXIT)    \
+    {                         \
+        free(disasm->labels); \
+        free(buffer);         \
+        return EXIT;          \
+    }
+
+#define JUMP_COMMAND(command) \
+    (command == JMP) ||       \
+    (command == JA ) ||       \
+    (command == JAE) ||       \
+    (command == JB ) ||       \
+    (command == JBE) ||       \
+    (command == JE ) ||       \
+    (command == JNE) ||       \
+    (command == CALL)
+
+static void get_command(disasm_config* disasm, const char* asm_file);
+static void        get_command_args(disasm_config* disasm, const char* asm_file);
+static void        check_if_label(disasm_config* disasm, const char* asm_file);
 
 void disasm_text(disasm_config* disasm, const char* byte_file, const char* asm_file)
 {
     assert(disasm);
     assert(byte_file);
+    assert(asm_file);
 
-    disasm->buffer = get_file_content(byte_file);
+    char* buffer = get_file_content(byte_file);
 
-    int ncommands = calc_nlines(disasm->buffer);
+    FILE* file = fopen(byte_file, "r");
+    int file_size = get_file_size(file);
+    fclose(file);
 
-    FILE* file = fopen(asm_file, "w");
+    disasm->labels = (char**) calloc(file_size, sizeof(char*));
 
-    char* buffer_ptr = disasm->buffer;
-    for (int i = 0; i < ncommands; i++)
+    disasm->code = buffer;
+    while (disasm->code != &buffer[file_size])
     {
-        buffer_ptr = scan_buffer(buffer_ptr, disasm);
-        check_command(disasm);
-        turn_into_asm(disasm, file);
+        check_if_label(disasm, asm_file);
+        disasm->command = *disasm->code++;
+        get_command(disasm, asm_file);
     }
 
-    disasm->buffer = nullptr;
-    free(disasm->buffer);
+    free(disasm->labels);
+    free(buffer);
+}
+
+static void get_command(disasm_config* disasm, const char* asm_file)
+{
+    assert(disasm);
+    assert(asm_file);
+
+    FILE* file = fopen(asm_file, "a");
+    assert(file);
+
+    #define DEF_CMD(string_name, name, ...) \
+        case name:                          \
+            fprintf(file, string_name " "); \
+            break;
+
+    switch (disasm->command & COMMAND)
+    {
+        #include "../../codegen/commands.h"
+
+        default:
+            fprintf(stderr, "Unknown case file: %s, line: %d\n", __FILE__, __LINE__);
+            break;
+    }
+
+    #undef DEF_CMD
+
+    fclose(file);
+
+    get_command_args(disasm, asm_file);
+
+    file = fopen(asm_file, "a");
+    fprintf(file, "\n");
+    fclose(file);
+}
+
+static void get_command_args(disasm_config* disasm, const char* asm_file)
+{
+    assert(disasm);
+    assert(asm_file);
+
+    FILE* file = fopen(asm_file, "a");
+
+    if (JUMP_COMMAND((disasm->command & COMMAND)))
+    {
+        memcpy(&disasm->value, (elem_t*) disasm->code, sizeof(elem_t)); disasm->code += sizeof(elem_t);
+        char* label = disasm->code - (int) disasm->value;
+        disasm->labels[disasm->labels_ip++] = label;
+
+        fprintf(file, "Label_%d", disasm->labels_ip);
+        fclose(file);
+        return;
+    }
+
+    if ((disasm->command & ARG_IMMED) &&
+        (disasm->command & ARG_REG))
+    {
+        disasm->reg_num = *disasm->code++;
+        disasm->value   = *((elem_t*) disasm->code); disasm->code += sizeof(elem_t);
+
+        if (disasm->command & ARG_MEM)
+        {
+            fprintf(file, "[%s + %lf]", registers_to_string[(int) disasm->reg_num], disasm->value);
+
+            fclose(file);
+            return;
+        }
+
+        fprintf(file, "%s + %lf", registers_to_string[(int) disasm->reg_num], disasm->value);
+
+        fclose(file);
+        return;
+    }
+
+    if (disasm->command & ARG_IMMED)
+    {
+        memcpy(&disasm->value, (elem_t*) disasm->code, sizeof(elem_t)); disasm->code += sizeof(elem_t);
+
+        if (disasm->command & ARG_MEM)
+        {
+            fprintf(file, "[%lf]", disasm->value);
+
+            fclose(file);
+            return;
+        }
+
+        fprintf(file, "%lf", disasm->value);
+    }
+
+    if (disasm->command & ARG_REG)
+    {
+        disasm->reg_num = *disasm->code++;
+
+        if (disasm->command & ARG_MEM)
+        {
+            fprintf(file, "[%s]", registers_to_string[(int) disasm->reg_num]);
+        }
+
+        fprintf(file, "%s", registers_to_string[(int) disasm->reg_num]);
+    }
 
     fclose(file);
 }
 
-static char* scan_buffer(char* buffer, disasm_config* disasm)
-{
-    assert(buffer);
-    assert(disasm);
-
-    int shift = 0;
-    while (buffer[shift++] != '\n');
-
-    buffer[shift - 1] = '\0';
-
-    if (sscanf(buffer, "%d %d %d", (int*) &disasm->masked_byte, &disasm->reg_num, &disasm->value) != 3)
-    {
-        sscanf(buffer, "%d %d", (int*) &disasm->masked_byte, &disasm->value);
-    }
-
-    return buffer + shift;
-}
-
-static void check_command(disasm_config* disasm)
+static void check_if_label(disasm_config* disasm, const char* asm_file)
 {
     assert(disasm);
+    assert(asm_file);
 
-    int command_code = (int) disasm->masked_byte & 0b00001111;
-
-    disasm->command = commands_to_string[command_code];
-
-    unsigned char immed_reg_byte = disasm->masked_byte >> 4;
-
-    if (immed_reg_byte == ARG_REG)
+    for (int i = 0; i < disasm->labels_ip; i++)
     {
-        disasm->reg = registers_to_string[disasm->value];
-    }
+        if ((disasm->code + sizeof(elem_t)) == disasm->labels[i])
+        {
+            FILE* file = fopen(asm_file, "a");
+            fprintf(file, "Label_%d\n", i + 1);
+            fclose(file);
 
-    if (immed_reg_byte == (ARG_REG | ARG_IMMED))
-    {
-        disasm->reg = registers_to_string[disasm->reg_num];
-    }
-}
-
-static void turn_into_asm(disasm_config* disasm, FILE* file)
-{
-    assert(disasm);
-    assert(file);
-
-    unsigned char immed_reg_byte = disasm->masked_byte >> 4;
-
-    if (immed_reg_byte == NO_ARG)
-    {
-        fprintf(file, "%s\n", disasm->command);
-    }
-    else if (immed_reg_byte == ARG_IMMED)
-    {
-        fprintf(file, "%s %d\n", disasm->command, disasm->value);
-    }
-    else if (immed_reg_byte == ARG_REG)
-    {
-        fprintf(file, "%s %s\n", disasm->command, disasm->reg);
-    }
-    else if (immed_reg_byte == (ARG_REG | ARG_IMMED))
-    {
-        fprintf(file, "%s %s + %d\n", disasm->command, disasm->reg, disasm->value);
+            return;
+        }
     }
 }

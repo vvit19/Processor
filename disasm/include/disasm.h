@@ -1,25 +1,59 @@
 #ifndef DISASM_H
 #define DISASM_H
 
-const char* const commands_to_string[] = {"hlt", "out", "in", "push", "pop", "add", "sub", "mult", "div"};
+typedef double elem_t;
+
+// #define DEF_CMD(string_name, ...) string_name,
+// const char* const commands_to_string[]  =
+// {
+//     #include "commands.h"
+// };
+// #undef DEF_CMD
+
+enum commands
+{
+    HLT ,
+    OUT ,
+    OUTC,
+    IN  ,
+    PUSH,
+    POP ,
+    ADD ,
+    SUB ,
+    MULT,
+    DIV ,
+    SIN ,
+    COS ,
+    SQRT,
+    JMP ,
+    JA  ,
+    JAE ,
+    JB  ,
+    JBE ,
+    JE  ,
+    JNE ,
+    CALL,
+    RET ,
+};
 
 const char* const registers_to_string[] = {"rax", "rbx", "rcx", "rdx"};
 
 enum byte_masks
 {
-    NO_ARG    = 0,
-    ARG_IMMED = 1,
-    ARG_REG   = 2,
+    ARG_IMMED = 0b00100000,
+    ARG_REG   = 0b01000000,
+    ARG_MEM   = 0b10000000,
+    COMMAND   = 0b00011111,
 };
 
 struct disasm_config
 {
-    char* buffer;
-    const char* command;
-    int value;
-    int reg_num;
-    const char* reg;
-    unsigned char masked_byte;
+    char*  code;
+    char** labels;
+    int    labels_ip;
+    char   command;
+    elem_t value;
+    char   reg_num;
 };
 
 void disasm_text(disasm_config* disasm, const char* byte_file, const char* asm_file);

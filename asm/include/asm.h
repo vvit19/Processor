@@ -39,6 +39,12 @@ struct asm_config
     char*        position;
 };
 
+struct brackets
+{
+    char* bracket_1;
+    char* bracket_2;
+};
+
 void run_asm(asm_config* asm_parameters, const char* asm_file, const char* byte_file);
 
 #endif

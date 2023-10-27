@@ -12,7 +12,8 @@
     if (exit_code == EXIT) \
     {                       \
         free(buffer);        \
-        return exit_code;     \
+        free(proc->ram);      \
+        return exit_code;      \
     }
 
 static return_code do_command    (spu* proc);
@@ -32,7 +33,7 @@ return_code spu_start(spu* proc, const char* byte_file)
     proc->stk = &stk;
     STACK_CTOR(proc->stk);
 
-    for (int i = 0; i < RAM_SIZE; i++) proc->ram[i] = 0;
+    proc->ram = (char*) calloc(RAM_SIZE, sizeof(char));
 
     proc->code = buffer;
     while (*proc->code != EOF && *proc->code != '\0')
@@ -57,7 +58,7 @@ static return_code do_command(spu* proc)
             code                                  \
             break;
 
-    switch(proc->command & COMMAND)
+    switch (proc->command & COMMAND)
     {
         #include "commands.h"
 
@@ -82,7 +83,8 @@ static elem_t* get_argument(spu* proc)
     {
         proc->reg_num = *proc->code++;
         reg_ptr       = check_register(proc);
-        proc->value   = *((elem_t*) proc->code); proc->code += sizeof(elem_t);
+
+        memcpy(&proc->value, (elem_t*) proc->code, sizeof(elem_t)); proc->code += sizeof(elem_t);
         proc->value  += *reg_ptr;
 
         if (proc->command & ARG_MEM)

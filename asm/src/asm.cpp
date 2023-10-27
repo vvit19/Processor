@@ -20,7 +20,8 @@
 static void  turn_into_bytecode(asm_config* asm_parameters);
 static char* scan_buffer(asm_config* asm_parameters);
 static void  check_command_args(asm_config* asm_parameters);
-static void  check_memory_args(asm_config* asm_parametes);
+static void  check_memory_args(asm_config* asm_parametes, brackets* brackets_info);
+static void  fill_brackets_back(brackets* brackets);
 static void  check_command(asm_config* asm_parameters);
 static void  check_register(asm_config* asm_parameters);
 static void  roll_parameters_back(asm_config* asm_parameters);
@@ -98,7 +99,8 @@ static char* scan_buffer(asm_config* asm_parameters)
 
     sscanf(asm_parameters->buffer, "%s", asm_parameters->command);
 
-    check_memory_args(asm_parameters);
+    brackets brackets_info = {};
+    check_memory_args(asm_parameters, &brackets_info);
 
     char* position = asm_parameters->buffer + strlen(asm_parameters->command) + 1;
 
@@ -146,6 +148,8 @@ static char* scan_buffer(asm_config* asm_parameters)
         sscanf(position, "%s", asm_parameters->reg);
     }
 
+    fill_brackets_back(&brackets_info);
+
     return asm_parameters->buffer + shift;
 }
 
@@ -168,39 +172,37 @@ static char* find_named_label(asm_config* asm_parameters)
     return nullptr;
 }
 
-static void check_memory_args(asm_config* asm_parameters)
+static void check_memory_args(asm_config* asm_parameters, brackets* brackets_info)
 {
     assert(asm_parameters);
 
-    bool opened_bracket = false;
-
     for (int i = 0; (asm_parameters->buffer[i] != '\n') && (asm_parameters->buffer[i] != '\0'); i++)
     {
-        if ((asm_parameters->buffer[i] == '\\') && (opened_bracket == true))
+        if ((asm_parameters->buffer[i] == ']') && (brackets_info->bracket_1 != nullptr))
         {
             asm_parameters->buffer[i] = ' ';
+
+            brackets_info->bracket_2 = &asm_parameters->buffer[i];
+
             asm_parameters->masked_byte |= ARG_MEM;
-            return;
-        }
-
-        if (asm_parameters->buffer[i] == '/')
-        {
-            asm_parameters->buffer[i] = ' ';
-            opened_bracket = true;
-        }
-
-        if ((asm_parameters->buffer[i] == ']') && (opened_bracket == true))
-        {
-            asm_parameters->buffer[i] = '\\';
             return;
         }
 
         if (asm_parameters->buffer[i] == '[')
         {
-            asm_parameters->buffer[i] = '/';
-            opened_bracket = true;
+            asm_parameters->buffer[i] = ' ';
+
+            brackets_info->bracket_1 = &asm_parameters->buffer[i];
         }
     }
+}
+
+static void fill_brackets_back(brackets* brackets)
+{
+    assert(brackets);
+
+    if (brackets->bracket_1 != nullptr) *(brackets->bracket_1) = '[';
+    if (brackets->bracket_2 != nullptr) *(brackets->bracket_2) = ']';
 }
 
 static void check_command(asm_config* asm_parameters)

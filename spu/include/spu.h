@@ -49,7 +49,7 @@ struct regs
 
 struct spu
 {
-    char ram[RAM_SIZE];
+    char*   ram;
     char*   code;
     char    command;
     elem_t  value;
