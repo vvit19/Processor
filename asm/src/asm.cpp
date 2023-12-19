@@ -131,7 +131,7 @@ static char* scan_buffer(asm_config* asm_parameters)
         find_label(asm_parameters);
     }
 
-    if (strcmp(asm_parameters->command, "push") == 0)
+    if (strcmp(asm_parameters->command, "push") == 0 || strcmp(asm_parameters->command, "pop") == 0)
     {
         if (sscanf(position, "%s + %lf", asm_parameters->reg, &asm_parameters->value) != 2)
         {
@@ -144,11 +144,6 @@ static char* scan_buffer(asm_config* asm_parameters)
                 sscanf(position, "%s", asm_parameters->reg);
             }
         }
-    }
-
-    if (strcmp(asm_parameters->command, "pop") == 0)
-    {
-        sscanf(position, "%s", asm_parameters->reg);
     }
 
     fill_brackets_back(&brackets_info);
@@ -247,7 +242,7 @@ static void check_command_args(asm_config* asm_parameters)
         asm_parameters->masked_byte |= ARG_REG;
     }
 
-    if ((strcmp(asm_parameters->command, "push") == 0) || CHECK_JUMP_COMMANDS)
+    if ((strcmp(asm_parameters->command, "push") == 0) || CHECK_JUMP_COMMANDS || (strcmp(asm_parameters->command, "pop") == 0))
     {
         if (!is_equal(asm_parameters->value, VALUE_GARBAGE))
         {
@@ -275,6 +270,16 @@ static void turn_into_bytecode(asm_config* asm_parameters)
             return;
         }
 
+        if (!is_equal(asm_parameters->value, VALUE_GARBAGE))
+        {
+            *asm_parameters->code++ = asm_parameters->reg_code;
+            memcpy((double*) asm_parameters->code, &asm_parameters->value, sizeof(double)); asm_parameters->code += sizeof(double);
+            return;
+        }
+    }
+
+    if (strcmp(asm_parameters->command, "pop") == 0)
+    {
         if (!is_equal(asm_parameters->value, VALUE_GARBAGE))
         {
             *asm_parameters->code++ = asm_parameters->reg_code;

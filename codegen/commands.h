@@ -36,7 +36,7 @@ DEF_CMD("push", PUSH,
 {
     if (proc->command & ARG_MEM)
     {
-        char* popped_value = (char*) get_argument(proc);
+        elem_t* popped_value = (elem_t*) get_argument(proc);
         stack_push(proc->stk, (elem_t) *popped_value);
     }
     else
@@ -49,9 +49,8 @@ DEF_CMD("pop", POP,
 {
     if (proc->command & ARG_MEM)
     {
-        char* ram_ptr = (char*) get_argument(proc);
-        stack_pop(proc->stk, &proc->value);
-        *ram_ptr = (char) proc->value;
+        elem_t* ram_ptr = (elem_t*) get_argument(proc);
+        stack_pop(proc->stk, ram_ptr);
     }
     else
     {

@@ -1,32 +1,62 @@
-in ; push n
-pop rax ; rax = n
-
-push 1
-pop rbx ; rbx = k
-
-push 1
-pop rcx ; rcx = k!
-
-call fact
-
-push rcx
-out
-
+call main
 hlt
 
-fact:
-    push rax
-    push rbx
-    je exit ; if (n == k) return; (0)
-    push rbx
-    push 1
-    add ;
-    pop rbx ; rbx++ (0)
-    push rbx
-    push rcx
-    mult
-    pop rcx ; rcx *= k (0)
-    call fact
+main:
+pop rcx
+push 0
+pop [rax + 0]
+in
+pop [rax + 0]
+push rcx
+push [rax + 0]
+push rax + 1
+pop rax
+call factorial
+pop rcx
+push rax
+push 1
+sub
+pop rax
+push rbx
+pop [rax + 1]
+push [rax + 1]
+out
+push 0
+pop rbx
+push rcx
+ret
 
-exit:
-    ret
+factorial:
+pop rcx
+pop [rax + 0]
+push [rax + 0]
+push 1
+jne if_0
+push 1
+pop rbx
+push rcx
+ret
+
+if_0:
+push [rax + 0]
+push 1
+sub
+pop [rax + 1]
+push rcx
+push [rax + 1]
+push rax + 2
+pop rax
+call factorial
+pop rcx
+push rax
+push 2
+sub
+pop rax
+push rbx
+pop [rax + 2]
+push [rax + 0]
+push [rax + 2]
+mult
+pop rbx
+push rcx
+ret

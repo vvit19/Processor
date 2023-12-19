@@ -33,9 +33,10 @@ return_code spu_start(spu* proc, const char* byte_file)
     proc->stk = &stk;
     STACK_CTOR(proc->stk);
 
-    proc->ram = (char*) calloc(RAM_SIZE, sizeof(char));
+    proc->ram = (elem_t*) calloc(RAM_SIZE, sizeof(elem_t));
 
     proc->code = buffer;
+
     while (*proc->code != EOF && *proc->code != '\0')
     {
         proc->command = *proc->code++;
