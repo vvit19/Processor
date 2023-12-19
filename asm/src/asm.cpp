@@ -93,20 +93,23 @@ static char* scan_buffer(asm_config* asm_parameters)
     assert(asm_parameters->buffer);
     assert(asm_parameters);
 
-    while (*asm_parameters->buffer == ' ') asm_parameters->buffer++;
+    int i = skip_spaces (asm_parameters->buffer);
+
+    asm_parameters->buffer += i;
 
     int shift = calc_symbols_in_line(&asm_parameters->buffer);
 
     sscanf(asm_parameters->buffer, "%s", asm_parameters->command);
+    int command_length = strlen(asm_parameters->command);
 
     brackets brackets_info = {};
     check_memory_args(asm_parameters, &brackets_info);
 
-    char* position = asm_parameters->buffer + strlen(asm_parameters->command) + 1;
+    char* position = asm_parameters->buffer + command_length + 1;
 
-    if (asm_parameters->command[strlen(asm_parameters->command) - 1] == ':')
+    if (asm_parameters->command[command_length - 1] == ':')
     {
-        asm_parameters->command[strlen(asm_parameters->command) - 1] = '\0';
+        asm_parameters->command[command_length - 1] = '\0';
         strcpy(asm_parameters->named_labels_array[asm_parameters->named_labels_ip].name, asm_parameters->command);
         asm_parameters->named_labels_array[asm_parameters->named_labels_ip].label_ptr = asm_parameters->code;
         asm_parameters->named_labels_ip++;

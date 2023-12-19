@@ -3,6 +3,7 @@
 #include <cstring>
 #include <cstdio>
 #include <cmath>
+#include <cctype>
 
 #include "utils.h"
 
@@ -81,7 +82,26 @@ char* remove_empty_lines(char* buffer, int* line, int nlines)
          buffer++;
     }
 
+    if (*buffer == ';')
+    {
+        while (*buffer != '\n') buffer++;
+        buffer++;
+        (*line)++;
+    }
+
+
     return buffer;
+}
+
+int skip_spaces (char* buffer)
+{
+    assert (buffer);
+
+    int i = 0;
+
+    while (isspace (buffer[i])) i++;
+
+    return i;
 }
 
 bool is_equal(double a, double b)

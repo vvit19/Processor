@@ -1,6 +1,7 @@
 call main
 
-push 10 ; \n ascii
+; \n ascii
+push 10
 outc
 
 hlt
